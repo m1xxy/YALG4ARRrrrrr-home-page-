@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YALG4AR | Premium iPhone Lens Protector</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Inter for Apple-like UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Syncopate as the alternative for Axira Expanded / Akira Expanded -->
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans:['Inter', 'sans-serif'],
+                        akira: ['Syncopate', 'sans-serif'], // Custom wide font
+                    },
+                    colors: {
+                        appleGray: '#f5f5f7',
+                        appleDark: '#1d1d1f',
+                        maroon: {
+                            DEFAULT: '#7a1025',
+                            light: '#a31531',
+                            dark: '#4f0917'
+                        }
+                    },
+                    boxShadow: {
+                        'glow': '0 0 20px rgba(122, 16, 37, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f5f5f7; }
+        ::-webkit-scrollbar-thumb { background: #d1d1d6; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #7a1025; }
+
+        /* Glassmorphism */
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        /* Micro-interactions */
+        .hover-zoom { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        .hover-zoom:hover { transform: scale(1.03); }
+
+        .button-glow { transition: all 0.3s ease; }
+        .button-glow:hover {
+            box-shadow: 0 0 25px rgba(122, 16, 37, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* Floating Animation */
+        @keyframes float {
+            0% { transform: translateY(0px) rotateX(0deg); }
+            50% { transform: translateY(-15px) rotateX(5deg); }
+            100% { transform: translateY(0px) rotateX(0deg); }
+        }
+        .floating-product { animation: float 6s ease-in-out infinite; }
+        
+        #three-canvas-container {
+            width: 100%; height: 100vh; cursor: grab;
+        }
+        #three-canvas-container:active { cursor: grabbing; }
+
+        /* ------------------------------------
+           3D Interactive Metallic Card CSS 
+           ------------------------------------ */
+        .perspective-container {
+            perspective: 1200px;
+        }
+        .card-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.1s; /* Quick response for JS drag */
+            will-change: transform;
+            cursor: grab;
+            touch-action: pan-y; /* Allows vertical scrolling on mobile while grabbing */
+        }
+        .card-3d:active { cursor: grabbing; }
+        .card-face {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+        .metallic-texture {
+            background: linear-gradient(135deg, #ffffff 0%, #e2e2e2 20%, #fefefe 50%, #d4d4d4 80%, #ffffff 100%);
+            box-shadow: 
+                inset 0 0 20px rgba(255,255,255,1), 
+                inset 0 0 5px rgba(0,0,0,0.1),
+                0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .metallic-shine {
+            background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.8) 25%, transparent 30%);
+            background-size: 200% auto;
+            animation: shine 5s infinite linear;
+        }
+        @keyframes shine {
+            0% { background-position: 200% center; }
+            100% { background-position: -200% center; }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header Navigation -->
+    <header class="fixed top-0 w-full z-50 glass-nav transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Polo style logo & Brand -->
+                <div class="flex items-center gap-3 cursor-pointer">
+                    <!-- Polo Logo -->
+                    <svg class="h-8 w-8 text-maroon" viewBox="0 0 100 100" fill="currentColor">
+                        <path d="M72.5,41.4 L67.8,38.1 C66.1,36.9 63.8,36.4 61.8,37.2 L55.5,39.6 L53.1,32.2 C52.2,29.3 49.5,27.3 46.4,27.3 C44.1,27.3 41.5,28.6 40.2,30.8 L36.7,36.9 L32.3,37.2 C28.9,37.4 26.2,40.4 26.2,43.8 C26.2,46.5 28.1,48.8 30.7,49.5 L36.9,51.2 L35.2,58.8 L28.8,61.4 C25.1,62.8 22.8,66.6 23.3,70.6 L24.6,81.3 C24.9,83.9 27.4,85.6 29.9,85.1 L35.5,84 C38.6,83.4 40.8,80.6 40.8,77.4 L40.8,66.2 L49.5,66.2 C52.7,66.2 55.6,64.2 56.8,61.2 L61.1,50.7 L72.1,57.1 C74.2,58.3 76.8,57.8 78.4,56 L85.5,47.8 C87.3,45.7 87,42.5 84.8,40.8 L72.5,41.4 Z M48.5,17.4 C51.8,17.4 54.5,14.7 54.5,11.4 C54.5,8.1 51.8,5.4 48.5,5.4 C45.2,5.4 42.5,8.1 42.5,11.4 C42.5,14.7 45.2,17.4 48.5,17.4 Z"/>
+                    </svg>
+                    <span class="font-bold text-xl tracking-widest text-appleDark">YALG4AR</span>
+                </div>
+                <nav class="hidden md:flex space-x-8 text-sm font-medium">
+                    <a href="#features" class="hover:text-maroon transition">Features</a>
+                    <a href="#showcase" class="hover:text-maroon transition">Showcase</a>
+                    <a href="#install" class="hover:text-maroon transition">Install</a>
+                </nav>
+                <div>
+                    <!-- CHANGED: Replaced onclick="triggerConfetti()" with standard link redirect -->
+                    <button onclick="window.location.href='https://yalg4arcollection.netlify.app/'" class="bg-maroon text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-maroon-dark transition button-glow">
+                        Buy Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-white to-appleGray pt-20">
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+            <h1 class="text-[15vw] font-black tracking-tighter text-black/5 select-none">YALG4AR</h1>
+        </div>
+        
+        <div class="text-center z-10 flex flex-col items-center mt-10">
+            <h2 class="text-5xl md:text-7xl font-semibold tracking-tight mb-4 text-appleDark hero-text" style="opacity: 0; transform: translateY(30px);">YALG4AR Lens Protector</h2>
+            <p class="text-xl md:text-2xl text-gray-500 font-light mb-8 hero-text" style="opacity: 0; transform: translateY(30px);">Ultimate protection. Crystal clear shots.</p>
+            <div class="flex gap-4 justify-center hero-text" style="opacity: 0; transform: translateY(30px);">
+                <!-- CHANGED: Replaced onclick="triggerConfetti()" with standard link redirect -->
+                <button onclick="window.location.href='https://yalg4arcollection.netlify.app/'" class="bg-maroon text-white px-8 py-4 rounded-full text-lg font-medium hover:bg-maroon-dark transition button-glow">
+                    Buy Now
+                </button>
+                <a href="#showcase" class="bg-white/50 border border-gray-300 text-appleDark px-8 py-4 rounded-full text-lg font-medium hover:bg-white transition backdrop-blur-sm">
+                    View Gallery
+                </a>
+            </div>
+        </div>
+
+        <div class="mt-16 z-20 w-full flex justify-center hero-image-container relative">
+            <div class="absolute w-64 h-64 bg-maroon/20 rounded-full blur-[80px] -z-10"></div>
+            <img src="https://i.ibb.co/2YNgSG2p/IMG-20260325-171627.jpg" alt="YALG4AR Protector" class="w-64 md:w-80 lg:w-[400px] rounded-[3rem] shadow-2xl floating-product object-cover aspect-square border-4 border-white">
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 bg-white relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-semibold tracking-tight text-appleDark section-title">Why YALG4AR?</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div class="feature-card p-6">
+                    <div class="text-4xl mb-4">🛡️</div>
+                    <h3 class="text-xl font-semibold mb-2">9H Hardness Glass</h3>
+                    <p class="text-gray-500 font-light">Diamond-level resistance against scratches and daily wear.</p>
+                </div>
+                <div class="feature-card p-6">
+                    <div class="text-4xl mb-4">💎</div>
+                    <h3 class="text-xl font-semibold mb-2">Optical Clarity</h3>
+                    <p class="text-gray-500 font-light">Zero flash glare. Keeps your photos brilliantly sharp.</p>
+                </div>
+                <div class="feature-card p-6">
+                    <div class="text-4xl mb-4">📷</div>
+                    <h3 class="text-xl font-semibold mb-2">Seamless Fit</h3>
+                    <p class="text-gray-500 font-light">Matches your iPhone’s exact aesthetic perfectly.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==============================================
+         INDIVIDUAL IMAGE SHOWCASE SPACES
+         ============================================== -->
+    <section id="showcase" class="bg-appleGray overflow-hidden">
+        
+        <!-- Showcase Image 1 -->
+        <div class="py-24 border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center gap-12 showcase-block">
+                <div class="flex-1 text-center md:text-left">
+                    <h2 class="text-4xl md:text-6xl font-bold tracking-tight text-appleDark mb-4">Sapphire Coating.</h2>
+                    <p class="text-2xl text-gray-500 font-light">Unyielding defense against scratches.</p>
+                </div>
+                <div class="flex-1 w-full">
+                    <img src="https://i.ibb.co/7dCYGJ8G/IMG-20260325-171638.jpg" class="w-full h-auto rounded-[2.5rem] shadow-xl hover-zoom object-cover">
+                </div>
+            </div>
+        </div>
+
+        <!-- Showcase Image 2 -->
+        <div class="py-24 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row-reverse items-center gap-12 showcase-block">
+                <div class="flex-1 text-center md:text-left">
+                    <h2 class="text-4xl md:text-6xl font-bold tracking-tight text-appleDark mb-4">Aviation Grade.</h2>
+                    <p class="text-2xl text-gray-500 font-light">Titanium alloy frame for drop survival.</p>
+                </div>
+                <div class="flex-1 w-full">
+                    <img src="https://i.ibb.co/nMrZ0hBs/IMG-20260325-171654.jpg" class="w-full h-auto rounded-[2.5rem] shadow-xl hover-zoom object-cover">
+                </div>
+            </div>
+        </div>
+
+        <!-- Showcase Image 3 -->
+        <div class="py-24 border-b border-gray-200 bg-appleGray">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center gap-12 showcase-block">
+                <div class="max-w-3xl">
+                    <h2 class="text-4xl md:text-6xl font-bold tracking-tight text-appleDark mb-4">99.9% Transmittance.</h2>
+                    <p class="text-2xl text-gray-500 font-light">Preserves original camera quality perfectly.</p>
+                </div>
+                <div class="w-full max-w-4xl">
+                    <img src="https://i.ibb.co/0RqVmYLc/IMG-20260325-171705.jpg" class="w-full h-auto rounded-[2.5rem] shadow-xl hover-zoom object-cover">
+                </div>
+            </div>
+        </div>
+
+        <!-- Showcase Image 4 -->
+        <div class="py-24 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center gap-12 showcase-block">
+                <div class="flex-1 text-center md:text-left">
+                    <h2 class="text-4xl md:text-6xl font-bold tracking-tight text-appleDark mb-4">Water & Dust Free.</h2>
+                    <p class="text-2xl text-gray-500 font-light">Oleophobic coating keeps it spotless.</p>
+                </div>
+                <div class="flex-1 w-full">
+                    <img src="https://i.ibb.co/rKcydYQd/IMG-20260325-171718.jpg" class="w-full h-auto rounded-[2.5rem] shadow-xl hover-zoom object-cover">
+                </div>
+            </div>
+        </div>
+
+        <!-- Showcase Image 5 -->
+        <div class="py-24 bg-appleGray">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row-reverse items-center gap-12 showcase-block">
+                <div class="flex-1 text-center md:text-left">
+                    <h2 class="text-4xl md:text-6xl font-bold tracking-tight text-appleDark mb-4">Case Friendly.</h2>
+                    <p class="text-2xl text-gray-500 font-light">Fits perfectly with your favorite case.</p>
+                </div>
+                <div class="flex-1 w-full">
+                    <img src="https://i.ibb.co/9H7wjFR1/IMG-20260325-171731.jpg" class="w-full h-auto rounded-[2.5rem] shadow-xl hover-zoom object-cover">
+                </div>
+            </div>
+        </div>
+
+        <!-- Showcase Image 6 -->
+        <div class="py-24 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center gap-12 showcase-block">
+                <div class="max-w-3xl">
+                    <h2 class="text-4xl md:text-6xl font-bold tracking-tight text-appleDark mb-4">Night Mode Ready.</h2>
+                    <p class="text-2xl text-gray-500 font-light">Built-in anti-glare ring for flash.</p>
+                </div>
+                <div class="w-full max-w-4xl">
+                    <img src="https://i.ibb.co/93tvT1rJ/IMG-20260325-171742.jpg" class="w-full h-auto rounded-[2.5rem] shadow-xl hover-zoom object-cover">
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- 3D Product View -->
+    <section id="3d-section" class="relative h-screen bg-[#0a0a0a] overflow-hidden flex items-center justify-center">
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+            <h2 class="text-white/10 text-[6vw] md:text-[5vw] font-bold text-center leading-none tracking-tighter">Precision Engineered<br>Protection</h2>
+        </div>
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-20 text-white/50 text-sm tracking-widest animate-pulse flex flex-col items-center pointer-events-none">
+            <svg class="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+            DRAG TO ROTATE MODEL
+        </div>
+        <div id="three-canvas-container" class="z-10 relative"></div>
+    </section>
+
+    <!-- Installation Section -->
+    <section id="install" class="py-32 bg-appleGray">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-semibold tracking-tight text-appleDark">Easy installation.</h2>
+            </div>
+            <div class="flex flex-col md:flex-row gap-8 justify-center items-center install-steps">
+                <div class="flex-1 text-center group install-step bg-white p-8 rounded-3xl shadow-sm">
+                    <h3 class="text-2xl font-semibold mb-2">1. Clean</h3>
+                    <p class="text-gray-500 font-light">Wipe the lens perfectly clean.</p>
+                </div>
+                <div class="hidden md:block text-gray-300 text-4xl">➔</div>
+                <div class="flex-1 text-center group install-step bg-white p-8 rounded-3xl shadow-sm">
+                    <h3 class="text-2xl font-semibold mb-2">2. Align</h3>
+                    <p class="text-gray-500 font-light">Place the tray over the camera.</p>
+                </div>
+                <div class="hidden md:block text-gray-300 text-4xl">➔</div>
+                <div class="flex-1 text-center group install-step bg-white p-8 rounded-3xl shadow-sm">
+                    <h3 class="text-2xl font-semibold mb-2">3. Press</h3>
+                    <p class="text-gray-500 font-light">Press gently to apply.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="relative py-20 overflow-hidden bg-gradient-to-br from-maroon-dark to-maroon">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.1)_0%,transparent_70%)]"></div>
+        <div class="relative max-w-4xl mx-auto px-4 text-center z-10">
+            <h2 class="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-8">Upgrade Your Camera Today.</h2>
+            <!-- CHANGED: Replaced onclick="triggerConfetti()" with standard link redirect -->
+            <button onclick="window.location.href='https://yalg4arcollection.netlify.app/'" class="bg-white text-maroon-dark px-10 py-5 rounded-full text-xl font-bold hover:bg-appleGray transition shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_rgba(255,255,255,0.5)] transform hover:-translate-y-1">
+                Buy Now
+            </button>
+        </div>
+    </section>
+
+    <!-- ==============================================
+         3D ROTATABLE METALLIC CARD SECTION
+         ============================================== -->
+    <section class="py-24 bg-gray-200 flex flex-col items-center justify-center relative overflow-hidden perspective-container">
+        
+        <div class="text-center mb-10">
+            <p class="text-sm font-bold tracking-widest text-gray-400 uppercase mb-2">Official Contact</p>
+            <p class="text-gray-500 text-sm animate-pulse">Drag left or right to flip the card</p>
+        </div>
+
+        <!-- 3D Card Container -->
+        <div id="metallic-card" class="card-3d w-[90vw] max-w-[450px] h-[260px] relative mx-auto">
+            
+            <!-- Front Face -->
+            <div class="card-face card-front absolute inset-0 rounded-[1.5rem] metallic-texture border border-white flex flex-col justify-center items-center overflow-hidden">
+                <!-- Shine effect -->
+                <div class="absolute inset-0 metallic-shine opacity-60 pointer-events-none"></div>
+                
+                <!-- YALG4AR Logo (Axira Expanded alternative) -->
+                <h2 class="font-akira text-4xl md:text-5xl text-black z-10 select-none">YALG4AR</h2>
+                
+                <!-- WhatsApp & Number (Bottom Left) -->
+                <div class="absolute bottom-5 left-6 flex items-center gap-2 z-10 bg-white/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm">
+                    <!-- WhatsApp SVG Logo -->
+                    <svg class="w-5 h-5 text-green-500 drop-shadow-md" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12.031 0C5.397 0 0 5.392 0 12.023c0 2.124.553 4.195 1.603 6.01L.226 23.4l5.502-1.444a11.968 11.968 0 006.303 1.776h.005c6.634 0 12.031-5.392 12.031-12.023A12.02 12.02 0 0020.536 3.52 11.983 11.983 0 0012.031 0zm0 21.69c-1.796 0-3.555-.483-5.101-1.398l-.366-.217-3.792.994.996-3.696-.238-.379A9.998 9.998 0 012.043 12.02c0-5.507 4.483-9.987 9.993-9.987 2.668 0 5.176 1.04 7.062 2.927A9.957 9.957 0 0122.023 12.02c0 5.507-4.484 9.988-9.987 9.988l-.005-4.318zm5.484-7.498c-.3-.15-1.774-.876-2.048-.976-.275-.1-.475-.15-.675.15-.2.301-.774.976-.949 1.176-.175.2-.35.226-.65.076-2.052-1.03-3.415-1.928-4.717-3.652-.175-.232-.018-.358.132-.508.135-.135.3-.351.45-.526.15-.175.2-.301.3-.501.1-.2.05-.376-.025-.526-.075-.15-.675-1.626-.925-2.227-.243-.585-.49-.505-.675-.515-.175-.008-.375-.008-.575-.008-.2 0-.525.075-.8.375-.275.3-1.05 1.026-1.05 2.502 0 1.477 1.075 2.903 1.225 3.103.15.2 2.115 3.228 5.123 4.528.716.31 1.275.495 1.711.634.718.228 1.371.196 1.888.118.577-.087 1.774-.726 2.024-1.426.25-.7.25-1.3.175-1.426-.075-.126-.275-.201-.575-.351z"/>
+                    </svg>
+                    <span class="text-black font-semibold text-sm tracking-wide">03207171575</span>
+                </div>
+            </div>
+
+            <!-- Back Face -->
+            <div class="card-face card-back absolute inset-0 rounded-[1.5rem] metallic-texture border border-white flex justify-center items-center">
+                <!-- Shine effect -->
+                <div class="absolute inset-0 metallic-shine opacity-60 pointer-events-none"></div>
+                <!-- Polo Logo on the Back -->
+                <svg class="h-24 w-24 text-black opacity-80 z-10 select-none" viewBox="0 0 100 100" fill="currentColor">
+                    <path d="M72.5,41.4 L67.8,38.1 C66.1,36.9 63.8,36.4 61.8,37.2 L55.5,39.6 L53.1,32.2 C52.2,29.3 49.5,27.3 46.4,27.3 C44.1,27.3 41.5,28.6 40.2,30.8 L36.7,36.9 L32.3,37.2 C28.9,37.4 26.2,40.4 26.2,43.8 C26.2,46.5 28.1,48.8 30.7,49.5 L36.9,51.2 L35.2,58.8 L28.8,61.4 C25.1,62.8 22.8,66.6 23.3,70.6 L24.6,81.3 C24.9,83.9 27.4,85.6 29.9,85.1 L35.5,84 C38.6,83.4 40.8,80.6 40.8,77.4 L40.8,66.2 L49.5,66.2 C52.7,66.2 55.6,64.2 56.8,61.2 L61.1,50.7 L72.1,57.1 C74.2,58.3 76.8,57.8 78.4,56 L85.5,47.8 C87.3,45.7 87,42.5 84.8,40.8 L72.5,41.4 Z M48.5,17.4 C51.8,17.4 54.5,14.7 54.5,11.4 C54.5,8.1 51.8,5.4 48.5,5.4 C45.2,5.4 42.5,8.1 42.5,11.4 C42.5,14.7 45.2,17.4 48.5,17.4 Z"/>
+                </svg>
+            </div>
+            
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-appleDark text-white/60 py-12 text-center text-sm font-light">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-center mb-6">
+                <!-- Polo Logo -->
+                <svg class="h-6 w-6 text-white/40" viewBox="0 0 100 100" fill="currentColor">
+                    <path d="M72.5,41.4 L67.8,38.1 C66.1,36.9 63.8,36.4 61.8,37.2 L55.5,39.6 L53.1,32.2 C52.2,29.3 49.5,27.3 46.4,27.3 C44.1,27.3 41.5,28.6 40.2,30.8 L36.7,36.9 L32.3,37.2 C28.9,37.4 26.2,40.4 26.2,43.8 C26.2,46.5 28.1,48.8 30.7,49.5 L36.9,51.2 L35.2,58.8 L28.8,61.4 C25.1,62.8 22.8,66.6 23.3,70.6 L24.6,81.3 C24.9,83.9 27.4,85.6 29.9,85.1 L35.5,84 C38.6,83.4 40.8,80.6 40.8,77.4 L40.8,66.2 L49.5,66.2 C52.7,66.2 55.6,64.2 56.8,61.2 L61.1,50.7 L72.1,57.1 C74.2,58.3 76.8,57.8 78.4,56 L85.5,47.8 C87.3,45.7 87,42.5 84.8,40.8 L72.5,41.4 Z M48.5,17.4 C51.8,17.4 54.5,14.7 54.5,11.4 C54.5,8.1 51.8,5.4 48.5,5.4 C45.2,5.4 42.5,8.1 42.5,11.4 C42.5,14.7 45.2,17.4 48.5,17.4 Z"/>
+                </svg>
+            </div>
+            <p>&copy; 2026 YALG4AR. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // --- GSAP Scroll Animations ---
+        gsap.registerPlugin(ScrollTrigger);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            gsap.to(".hero-text", { y: 0, opacity: 1, duration: 1, stagger: 0.2, ease: "power3.out" });
+
+            gsap.to(".hero-image-container", {
+                scrollTrigger: { trigger: ".hero-image-container", start: "top center", end: "bottom top", scrub: 1 },
+                scale: 1.1, rotationZ: 5, opacity: 0.5, y: 50
+            });
+
+            gsap.from(".feature-card", {
+                scrollTrigger: { trigger: "#features", start: "top 70%" },
+                y: 50, opacity: 0, duration: 0.8, stagger: 0.15, ease: "power2.out"
+            });
+
+            // Showcase blocks fade in
+            const showcaseBlocks = document.querySelectorAll(".showcase-block");
+            showcaseBlocks.forEach((block) => {
+                gsap.from(block, {
+                    scrollTrigger: { trigger: block, start: "top 80%" },
+                    y: 60, opacity: 0, duration: 1, ease: "power3.out"
+                });
+            });
+
+            initThreeJS();
+        });
+
+        // --- Confetti Interaction (Kept in case you want to use it elsewhere) ---
+        function triggerConfetti() {
+            confetti({
+                particleCount: 150, spread: 80, origin: { y: 0.6 },
+                colors:['#7a1025', '#a31531', '#ffffff', '#1d1d1f']
+            });
+        }
+
+        // --- 3D Metallic Card Drag-to-Rotate Logic ---
+        const card = document.getElementById('metallic-card');
+        let isDraggingCard = false;
+        let startX = 0;
+        let currentRotY = 0;
+        let lastRotY = 0;
+
+        const startDrag = (e) => {
+            isDraggingCard = true;
+            startX = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+            card.style.transition = 'none'; // remove smooth transition during drag
+        };
+
+        const drag = (e) => {
+            if (!isDraggingCard) return;
+            const x = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+            const deltaX = x - startX;
+            currentRotY = lastRotY + (deltaX * 0.8); // Drag sensitivity
+            card.style.transform = `rotateY(${currentRotY}deg)`;
+        };
+
+        const stopDrag = () => {
+            if (!isDraggingCard) return;
+            isDraggingCard = false;
+            
+            // Snap to the nearest 180 degrees (Front or Back)
+            const snap = Math.round(currentRotY / 180) * 180;
+            currentRotY = snap;
+            lastRotY = snap;
+            
+            card.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
+            card.style.transform = `rotateY(${snap}deg)`;
+        };
+
+        // Mouse Events
+        card.addEventListener('mousedown', startDrag);
+        window.addEventListener('mousemove', drag);
+        window.addEventListener('mouseup', stopDrag);
+
+        // Touch Events
+        card.addEventListener('touchstart', startDrag, {passive: true});
+        window.addEventListener('touchmove', drag, {passive: true});
+        window.addEventListener('touchend', stopDrag);
+
+
+        // --- Three.js Lens Model Logic ---
+        function initThreeJS() {
+            const container = document.getElementById('three-canvas-container');
+            const scene = new THREE.Scene();
+            
+            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = 10; camera.position.y = 2;
+
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const pointLight1 = new THREE.PointLight(0x7a1025, 3, 50);
+            pointLight1.position.set(5, 5, 5);
+            scene.add(pointLight1);
+            const pointLight2 = new THREE.PointLight(0xffffff, 2, 50);
+            pointLight2.position.set(-5, -5, -5);
+            scene.add(pointLight2);
+
+            const lensGroup = new THREE.Group();
+            
+            const ringGeometry = new THREE.TorusGeometry(2, 0.3, 32, 100);
+            const ringMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0x222222, metalness: 0.9, roughness: 0.2, clearcoat: 1.0, clearcoatRoughness: 0.1
+            });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            lensGroup.add(ring);
+
+            const glassGeometry = new THREE.CylinderGeometry(1.9, 1.9, 0.1, 64);
+            const glassMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0xffffff, metalness: 0.1, roughness: 0, transmission: 0.9, thickness: 0.5,
+                envMapIntensity: 1.0, transparent: true, opacity: 0.4
+            });
+            const glass = new THREE.Mesh(glassGeometry, glassMaterial);
+            glass.rotation.x = Math.PI / 2;
+            lensGroup.add(glass);
+
+            const innerRingGeo = new THREE.TorusGeometry(1.3, 0.05, 16, 64);
+            const innerRingMat = new THREE.MeshBasicMaterial({ color: 0x050505 });
+            const innerRing = new THREE.Mesh(innerRingGeo, innerRingMat);
+            innerRing.position.z = -0.05;
+            lensGroup.add(innerRing);
+
+            scene.add(lensGroup);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; controls.dampingFactor = 0.05;
+            controls.enableZoom = false; controls.autoRotate = true; controls.autoRotateSpeed = 2.0;
+
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                const time = Date.now() * 0.001;
+                lensGroup.position.y = Math.sin(time) * 0.3;
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            window.addEventListener('resize', () => {
+                const width = container.clientWidth; const height = container.clientHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            });
+        }
+    </script>
+</body>
+</html>
